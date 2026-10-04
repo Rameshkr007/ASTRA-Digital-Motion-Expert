@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { soundEngine } from "@/utils/audio";
 
 /**
@@ -7,11 +7,12 @@ import { soundEngine } from "@/utils/audio";
  * Features:
  * - ASTRA branding with system revision
  * - Interactive links with smooth target scrolling
- * - Web Audio Synthesizer toggle (Mute / Unmute ambient soundscapes)
+ * - Web Audio Synthesizer toggle with dynamic visualizer EQ bars
  * - Online pulse telemetry indicator
  */
 export default function Navbar() {
   const [soundActive, setSoundActive] = useState(false);
+  const barsRef = useRef([]);
 
   const toggleSound = () => {
     const active = soundEngine.toggle();
@@ -33,6 +34,29 @@ export default function Navbar() {
     }
   };
 
+  // Real-time mini audio visualizer loop
+  useEffect(() => {
+    let animId;
+    const updateEq = () => {
+      if (soundActive) {
+        const spectrum = soundEngine.getSpectrumData();
+        if (spectrum && barsRef.current.length > 0) {
+          barsRef.current.forEach((bar, idx) => {
+            if (bar) {
+              const val = spectrum[idx * 3] || 30;
+              const heightPct = Math.min(100, Math.max(15, (val / 255) * 100));
+              bar.style.height = `${heightPct}%`;
+            }
+          });
+        }
+      }
+      animId = requestAnimationFrame(updateEq);
+    };
+
+    animId = requestAnimationFrame(updateEq);
+    return () => cancelAnimationFrame(animId);
+  }, [soundActive]);
+
   return (
     <header
       id="navbar"
@@ -41,7 +65,7 @@ export default function Navbar() {
       role="banner"
     >
       <nav
-        className="flex items-center justify-between px-6 md:px-14 py-5 bg-gradient-to-b from-[#050508]/90 via-[#050508]/60 to-transparent backdrop-blur-sm"
+        className="flex items-center justify-between px-6 md:px-14 py-5 bg-gradient-to-b from-[#030305]/95 via-[#030305]/70 to-transparent backdrop-blur-sm"
         aria-label="Primary navigation"
       >
         {/* Brand / Logo */}
@@ -86,23 +110,32 @@ export default function Navbar() {
         </ul>
 
         {/* Right Status & Audio Controls */}
-        <div className="flex items-center gap-5">
-          {/* Audio Synthesizer Toggle */}
+        <div className="flex items-center gap-4">
+          {/* Audio Synthesizer Toggle with Real-Time EQ Visualizer */}
           <button
             onClick={toggleSound}
             onMouseEnter={() => soundEngine.playHover()}
             data-cursor="open"
-            className="flex items-center gap-2 px-2.5 py-1 rounded border border-white/10 bg-white/5 hover:border-violet-500/40 transition-colors text-[10px] font-mono-custom text-white/70"
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 hover:border-violet-500/40 hover:bg-white/10 transition-all text-[10px] font-mono-custom text-white/70"
             title="Toggle procedural ambient soundscape"
             aria-label={soundActive ? "Mute audio" : "Unmute audio"}
           >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                soundActive ? "bg-cyan-400 shadow-[0_0_8px_#00d4ff]" : "bg-white/30"
-              }`}
-            />
+            {/* 4-Bar Mini Equalizer */}
+            <div className="flex items-end gap-0.5 h-3 w-3.5" aria-hidden="true">
+              {[0, 1, 2, 3].map((idx) => (
+                <span
+                  key={idx}
+                  ref={(el) => (barsRef.current[idx] = el)}
+                  className={`w-[2px] rounded-full transition-all duration-75 ${
+                    soundActive ? "bg-cyan-400" : "bg-white/30 h-1"
+                  }`}
+                  style={{ height: soundActive ? "40%" : "20%" }}
+                />
+              ))}
+            </div>
+
             <span className="hidden sm:inline">
-              AUDIO: {soundActive ? "ON" : "OFF"}
+              AUDIO: {soundActive ? "ONLINE" : "MUTED"}
             </span>
           </button>
 

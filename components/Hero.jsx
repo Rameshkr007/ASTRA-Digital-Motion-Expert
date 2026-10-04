@@ -17,25 +17,10 @@ const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 /**
- * Hero — master scroll-driven experience component for ASTRA.
- *
- * Architecture:
- * - Single master ScrollTrigger timeline (progress 0 → 1)
- * - 7 narrative stages mapped to scroll progress
- * - All animations synchronized through scrubbed master timeline
- * - Real-time scroll velocity & direction telemetry
- * - Full reduced motion & responsive fallbacks
- *
- * Stages:
- * STAGE 01 — INTRO       (0.00 → 0.10)
- * STAGE 02 — DEPTH       (0.10 → 0.25)
- * STAGE 03 — ORBIT       (0.25 → 0.40)
- * STAGE 04 — BREAK APART (0.40 → 0.55)
- * STAGE 05 — DATA MODE   (0.55 → 0.72)
- * STAGE 06 — REASSEMBLY  (0.72 → 0.88)
- * STAGE 07 — FINAL FRAME (0.88 → 1.00)
+ * Hero — Master scroll-driven experience component for ASTRA.
+ * Supports dynamic energy modes, click discharge, and 7-stage GSAP scrub.
  */
-export default function Hero({ onProgressChange }) {
+export default function Hero({ onProgressChange, energyMode = "violet", onCoreClick }) {
   const containerRef = useRef(null);
   const sectionRef = useRef(null);
   const visualRef = useRef(null);
@@ -171,14 +156,15 @@ export default function Hero({ onProgressChange }) {
             transformOrigin: "center center",
           });
 
-          // Gentle ambient celestial rotation
+          // Celestial rotation speed modulated by overdrive mode
+          const isOverdrive = energyMode === "overdrive";
           gsap.to("#visual-svg", {
             rotation: 360,
-            duration: 140,
+            duration: isOverdrive ? 45 : 130,
             ease: "none",
             repeat: -1,
             transformOrigin: "center center",
-            svgOrigin: "250 250",
+            svgOrigin: "300 300",
           });
 
           // ---- MASTER SCROLL-DRIVEN TIMELINE ----
@@ -233,7 +219,6 @@ export default function Hero({ onProgressChange }) {
           );
 
           // ------- STAGE 02 — DEPTH (0.10 → 0.25) -------
-          // Visual advances toward viewer, typography separates with parallax
           masterTl.to(
             "#astra-visual",
             {
@@ -276,14 +261,13 @@ export default function Hero({ onProgressChange }) {
           );
 
           // ------- STAGE 03 — ORBIT (0.25 → 0.40) -------
-          // Illusion of camera orbit around core, floating labels appear
           masterTl.to(
             "#visual-svg",
             {
               rotation: "+=32",
               duration: 0.15,
               ease: "none",
-              svgOrigin: "250 250",
+              svgOrigin: "300 300",
             },
             0.25
           );
@@ -323,13 +307,12 @@ export default function Hero({ onProgressChange }) {
           masterTl.to(
             "#orbit-outer",
             {
-              attr: { rx: 218, ry: 68 },
+              attr: { rx: 248, ry: 78 },
               duration: 0.15,
             },
             0.25
           );
 
-          // Background parallax shift
           masterTl.to(
             "#grid-bg",
             {
@@ -340,7 +323,6 @@ export default function Hero({ onProgressChange }) {
           );
 
           // ------- STAGE 04 — BREAK APART (0.40 → 0.55) -------
-          // Core separates into conceptual layers (CORE, FRAME, ENERGY, SIGNAL)
           masterTl.to(
             "#layer-core",
             {
@@ -390,7 +372,6 @@ export default function Hero({ onProgressChange }) {
           masterTl.to("#shard-3", { x: -22, y: -18, opacity: 0.9, duration: 0.12 }, 0.42);
           masterTl.to("#shard-4", { x: 32, y: 10, opacity: 0.8, duration: 0.12 }, 0.44);
 
-          // Headline fades out to make space for data mode
           masterTl.to(
             ".hero-letter",
             {
@@ -422,7 +403,6 @@ export default function Hero({ onProgressChange }) {
           );
 
           // ------- STAGE 05 — DATA MODE (0.55 → 0.72) -------
-          // Visual steps back, telemetry counters animate synchronously with scroll
           masterTl.to(
             "#astra-visual",
             {
@@ -472,7 +452,6 @@ export default function Hero({ onProgressChange }) {
           );
 
           // ------- STAGE 06 — REASSEMBLY (0.72 → 0.88) -------
-          // Layers reunite, headline crossfades to "MOVE BEYOND LIMITS"
           masterTl.to(
             "#data-mode",
             {
@@ -517,7 +496,6 @@ export default function Hero({ onProgressChange }) {
             0.72
           );
 
-          // Smooth crossfade to "MOVE BEYOND LIMITS"
           masterTl.to(
             "#hero-stage-text",
             {
@@ -601,7 +579,7 @@ export default function Hero({ onProgressChange }) {
     }, containerRef);
 
     return () => ctx.revert();
-  }, [isMobile, onProgressChange]);
+  }, [isMobile, onProgressChange, energyMode]);
 
   return (
     <section
@@ -643,7 +621,11 @@ export default function Hero({ onProgressChange }) {
           className="absolute inset-0 pointer-events-none overflow-hidden"
           aria-hidden="true"
         >
-          <ParticleField scrollVelocity={scrollVelocity} isMobile={isMobile} />
+          <ParticleField
+            scrollVelocity={scrollVelocity}
+            isMobile={isMobile}
+            energyMode={energyMode}
+          />
         </div>
 
         {/* HERO COMPOSITION OVERLAY */}
@@ -750,7 +732,7 @@ export default function Hero({ onProgressChange }) {
                 height: "clamp(280px, 42vw, 540px)",
               }}
             >
-              <HeroVisual />
+              <HeroVisual energyMode={energyMode} onCoreClick={onCoreClick} />
               <FloatingLabels />
               <DataMode progress={dataModeProgress} />
             </div>

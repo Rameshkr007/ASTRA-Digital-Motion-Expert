@@ -3,23 +3,33 @@ import { useRef, useEffect } from "react";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
- * ParticleField — lightweight canvas particle system.
- * - 25 (mobile) to 55 (desktop) particles
- * - Reads real-time scroll velocity via ref without restarting canvas loop
- * - requestAnimationFrame with visibility API pause
- * - High-DPI screen support with DPR clamp
+ * ParticleField — Interactive Canvas Particle System.
+ * Features:
+ * - Dynamic color palettes based on active energy mode
+ * - Mouse cursor magnetic repulsion / vortex deflection
+ * - Real-time scroll velocity streaking
+ * - High-DPI DPR optimization and Page Visibility pause
  */
-export default function ParticleField({ scrollVelocity = 0, isMobile = false }) {
+export default function ParticleField({
+  scrollVelocity = 0,
+  isMobile = false,
+  energyMode = "violet",
+}) {
   const canvasRef = useRef(null);
   const velocityRef = useRef(scrollVelocity);
+  const modeRef = useRef(energyMode);
+  const mouseRef = useRef({ x: -9999, y: -9999, isHover: false });
   const reduced = useReducedMotion();
   const animRef = useRef(null);
   const particlesRef = useRef([]);
 
-  // Keep velocity ref synced without restarting loop
   useEffect(() => {
     velocityRef.current = scrollVelocity;
   }, [scrollVelocity]);
+
+  useEffect(() => {
+    modeRef.current = energyMode;
+  }, [energyMode]);
 
   useEffect(() => {
     if (reduced) return;
@@ -30,7 +40,7 @@ export default function ParticleField({ scrollVelocity = 0, isMobile = false }) 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const COUNT = isMobile ? 25 : 55;
+    const COUNT = isMobile ? 25 : 60;
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
     const resize = () => {
@@ -39,15 +49,32 @@ export default function ParticleField({ scrollVelocity = 0, isMobile = false }) 
       if (W === 0 || H === 0) return;
       canvas.width = W * DPR;
       canvas.height = H * DPR;
-      ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform before scaling
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(DPR, DPR);
     };
     resize();
     window.addEventListener("resize", resize);
 
+    const getHuesForMode = (mode) => {
+      switch (mode) {
+        case "emerald":
+          return [155, 175, 140];
+        case "solar":
+          return [35, 15, 48];
+        case "overdrive":
+          return [285, 330, 195];
+        case "violet":
+        default:
+          return [275, 195, 225];
+      }
+    };
+
     const createParticle = (W, H) => {
       const types = ["dot", "line", "cross"];
       const type = types[Math.floor(Math.random() * types.length)];
+      const hues = getHuesForMode(modeRef.current);
+      const hue = hues[Math.floor(Math.random() * hues.length)];
+
       return {
         x: Math.random() * W,
         y: Math.random() * H,
@@ -59,7 +86,7 @@ export default function ParticleField({ scrollVelocity = 0, isMobile = false }) 
         life: 0,
         maxLife: Math.random() * 350 + 200,
         type,
-        hue: Math.random() > 0.65 ? 275 : Math.random() > 0.45 ? 195 : 225,
+        hue,
       };
     };
 
@@ -67,10 +94,25 @@ export default function ParticleField({ scrollVelocity = 0, isMobile = false }) 
     const H = canvas.offsetHeight || window.innerHeight;
     particlesRef.current = Array.from({ length: COUNT }, () => createParticle(W, H));
 
+    const onMouseMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        isHover: true,
+      };
+    };
+
+    const onMouseLeave = () => {
+      mouseRef.current = { x: -9999, y: -9999, isHover: false };
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseleave", onMouseLeave);
+
     let lastTime = 0;
     const draw = (time) => {
       animRef.current = requestAnimationFrame(draw);
-      const dt = Math.min(time - lastTime, 32);
       lastTime = time;
 
       const currW = canvas.offsetWidth;
@@ -79,12 +121,30 @@ export default function ParticleField({ scrollVelocity = 0, isMobile = false }) 
 
       ctx.clearRect(0, 0, currW, currH);
 
-      // Dynamic velocity multiplier
       const v = velocityRef.current;
-      const velMult = 1 + Math.min(Math.abs(v) * 0.003, 3.5);
+      const isOverdrive = modeRef.current === "overdrive";
+      const speedMult = isOverdrive ? 2.0 : 1.0;
+      const velMult = (1 + Math.min(Math.abs(v) * 0.003, 3.5)) * speedMult;
+      const hues = getHuesForMode(modeRef.current);
+
+      const mx = mouseRef.current.x;
+      const my = mouseRef.current.y;
 
       particlesRef.current.forEach((p, i) => {
         p.life++;
+
+        // Interactive mouse repulsion physics
+        const dx = p.x - mx;
+        const dy = p.y - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = 120;
+
+        if (dist < maxDist && dist > 1) {
+          const force = (1 - dist / maxDist) * 1.8;
+          p.x += (dx / dist) * force;
+          p.y += (dy / dist) * force;
+        }
+
         p.x += p.vx * velMult;
         p.y += p.vy * velMult;
 
@@ -96,11 +156,14 @@ export default function ParticleField({ scrollVelocity = 0, isMobile = false }) 
           alpha = ((1 - lifeRatio) / 0.2) * p.maxOpacity;
         }
 
-        // Boundary wrap / recreate
-        if (p.life > p.maxLife || p.x < -15 || p.x > currW + 15 || p.y < -15 || p.y > currH + 15) {
+        if (p.life > p.maxLife || p.x < -20 || p.x > currW + 20 || p.y < -20 || p.y > currH + 20) {
           particlesRef.current[i] = createParticle(currW, currH);
           return;
         }
+
+        // Color shift towards current mode
+        const targetHue = hues[i % hues.length];
+        p.hue += (targetHue - p.hue) * 0.05;
 
         ctx.save();
         ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
@@ -108,20 +171,18 @@ export default function ParticleField({ scrollVelocity = 0, isMobile = false }) 
         if (p.type === "dot") {
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fillStyle = `hsla(${p.hue}, 80%, 75%, 1)`;
+          ctx.fillStyle = `hsla(${p.hue}, 85%, 75%, 1)`;
           ctx.fill();
         } else if (p.type === "line") {
-          ctx.strokeStyle = `hsla(${p.hue}, 80%, 75%, 1)`;
+          ctx.strokeStyle = `hsla(${p.hue}, 85%, 75%, 1)`;
           ctx.lineWidth = 0.6;
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
-          // Trail elongates subtly with scroll velocity
-          const trailLen = 15 + Math.min(Math.abs(v) * 0.04, 25);
+          const trailLen = (15 + Math.min(Math.abs(v) * 0.04, 25)) * speedMult;
           ctx.lineTo(p.x + p.vx * trailLen, p.y + p.vy * trailLen);
           ctx.stroke();
         } else {
-          // cross
-          ctx.strokeStyle = `hsla(${p.hue}, 70%, 70%, 1)`;
+          ctx.strokeStyle = `hsla(${p.hue}, 80%, 72%, 1)`;
           ctx.lineWidth = 0.6;
           const s = p.size * 1.8;
           ctx.beginPath();
@@ -150,6 +211,8 @@ export default function ParticleField({ scrollVelocity = 0, isMobile = false }) 
     return () => {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseleave", onMouseLeave);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [reduced, isMobile]);

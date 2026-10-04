@@ -5,20 +5,47 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
  * HeroVisual — Master Futuristic Central Visual for ASTRA.
- * 100% Original Vector & CSS Composition.
- *
- * Features:
- * - 3D Perspective Mouse Gyro-Tilt (holographic physical depth)
- * - 4 Break-Apart Conceptual Layers: CORE, FRAME, ENERGY, SIGNAL
- * - Concentric Gyroscopic Rings with compass telemetry markings
- * - Quantum Plasma Reactor with multi-stop radial glow filters
- * - Sub-pixel orbital node tracking
- * - High-DPI crisp vector rendering
+ * Dynamic Energy Modes: VIOLET, EMERALD, SOLAR, OVERDRIVE.
+ * Click-to-discharge kinetic shockwaves.
  */
-export default function HeroVisual() {
+export default function HeroVisual({ energyMode = "violet", onCoreClick }) {
   const containerRef = useRef(null);
   const cardRef = useRef(null);
   const reduced = useReducedMotion();
+
+  // Color schemes for energy modes
+  const modeThemes = {
+    violet: {
+      primary: "#00d4ff",
+      secondary: "#7c5bf5",
+      accent: "#c084fc",
+      coreCenter: "#ffffff",
+      glow: "rgba(124, 91, 245, 0.35)",
+    },
+    emerald: {
+      primary: "#34d399",
+      secondary: "#059669",
+      accent: "#6ee7b7",
+      coreCenter: "#ffffff",
+      glow: "rgba(16, 185, 129, 0.4)",
+    },
+    solar: {
+      primary: "#fbbf24",
+      secondary: "#ea580c",
+      accent: "#fde047",
+      coreCenter: "#ffffff",
+      glow: "rgba(245, 158, 11, 0.45)",
+    },
+    overdrive: {
+      primary: "#f43f5e",
+      secondary: "#8b5cf6",
+      accent: "#38bdf8",
+      coreCenter: "#ffffff",
+      glow: "rgba(244, 63, 94, 0.55)",
+    },
+  };
+
+  const currentTheme = modeThemes[energyMode] || modeThemes.violet;
 
   // Holographic 3D mouse parallax tilt
   useEffect(() => {
@@ -39,7 +66,6 @@ export default function HeroVisual() {
       const dx = (e.clientX - cx) / (window.innerWidth / 2);
       const dy = (e.clientY - cy) / (window.innerHeight / 2);
 
-      // Subtle 3D tilt: max 12 deg
       xTo(dx * 12);
       yTo(-dy * 12);
     };
@@ -58,22 +84,44 @@ export default function HeroVisual() {
     };
   }, [reduced]);
 
+  // Click pulse animation
+  const handleInteraction = () => {
+    if (onCoreClick) onCoreClick();
+
+    if (cardRef.current) {
+      gsap.fromTo(
+        cardRef.current,
+        { scale: 0.94 },
+        { scale: 1, duration: 0.5, ease: "elastic.out(1.2, 0.4)" }
+      );
+    }
+  };
+
   return (
     <div
       ref={containerRef}
-      className="astra-core relative w-full h-full flex items-center justify-center"
+      className="astra-core relative w-full h-full flex items-center justify-center cursor-pointer select-none"
       style={{ perspective: "1200px" }}
       data-cursor="explore"
-      aria-label="ASTRA Interactive Digital Core Visual"
-      role="img"
+      onClick={handleInteraction}
+      aria-label="ASTRA Interactive Digital Core Visual — Click to discharge shockwave"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleInteraction();
+        }
+      }}
     >
       <div
         ref={cardRef}
         id="astra-visual"
-        className="relative w-full h-full flex items-center justify-center"
+        className="relative w-full h-full flex items-center justify-center transition-shadow duration-500"
         style={{
           transformStyle: "preserve-3d",
           willChange: "transform, opacity",
+          filter: `drop-shadow(0 0 55px ${currentTheme.glow})`,
         }}
       >
         {/* Main Vector Hologram SVG */}
@@ -82,42 +130,41 @@ export default function HeroVisual() {
           viewBox="0 0 600 600"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full max-w-[560px] max-h-[560px] overflow-visible drop-shadow-[0_0_50px_rgba(124,91,245,0.25)]"
+          className="w-full h-full max-w-[560px] max-h-[560px] overflow-visible"
           aria-hidden="true"
         >
           <defs>
             {/* Atmospheric Core Plasma Gradient */}
             <radialGradient id="plasma-core" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
-              <stop offset="25%" stopColor="#00d4ff" stopOpacity="0.9" />
-              <stop offset="55%" stopColor="#7c5bf5" stopOpacity="0.75" />
-              <stop offset="85%" stopColor="#1e1035" stopOpacity="0.3" />
+              <stop offset="0%" stopColor={currentTheme.coreCenter} stopOpacity="1" />
+              <stop offset="25%" stopColor={currentTheme.primary} stopOpacity="0.9" />
+              <stop offset="55%" stopColor={currentTheme.secondary} stopOpacity="0.8" />
+              <stop offset="85%" stopColor="#05050a" stopOpacity="0.3" />
               <stop offset="100%" stopColor="#050508" stopOpacity="0" />
             </radialGradient>
 
             <radialGradient id="ambient-aura" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#7c5bf5" stopOpacity="0.45" />
-              <stop offset="45%" stopColor="#00d4ff" stopOpacity="0.2" />
+              <stop offset="0%" stopColor={currentTheme.secondary} stopOpacity="0.5" />
+              <stop offset="45%" stopColor={currentTheme.primary} stopOpacity="0.25" />
               <stop offset="80%" stopColor="#050508" stopOpacity="0" />
             </radialGradient>
 
-            <linearGradient id="shard-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00d4ff" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#7c5bf5" stopOpacity="0.35" />
+            <linearGradient id="shard-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={currentTheme.primary} stopOpacity="0.95" />
+              <stop offset="100%" stopColor={currentTheme.secondary} stopOpacity="0.35" />
             </linearGradient>
 
-            <linearGradient id="shard-violet" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#c084fc" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.3" />
+            <linearGradient id="shard-grad-2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor={currentTheme.accent} stopOpacity="0.9" />
+              <stop offset="100%" stopColor={currentTheme.secondary} stopOpacity="0.3" />
             </linearGradient>
 
             <linearGradient id="telemetry-arc" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#7c5bf5" stopOpacity="0" />
-              <stop offset="50%" stopColor="#00d4ff" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#7c5bf5" stopOpacity="0" />
+              <stop offset="0%" stopColor={currentTheme.secondary} stopOpacity="0" />
+              <stop offset="50%" stopColor={currentTheme.primary} stopOpacity="0.85" />
+              <stop offset="100%" stopColor={currentTheme.secondary} stopOpacity="0" />
             </linearGradient>
 
-            {/* High-Performance SVG Glow Filter */}
             <filter id="neon-glow" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="6" result="blur" />
               <feMerge>
@@ -127,7 +174,7 @@ export default function HeroVisual() {
             </filter>
 
             <filter id="hyper-glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="12" result="blur2" />
+              <feGaussianBlur stdDeviation="14" result="blur2" />
               <feMerge>
                 <feMergeNode in="blur2" />
                 <feMergeNode in="SourceGraphic" />
@@ -155,8 +202,9 @@ export default function HeroVisual() {
               cx="300"
               cy="300"
               r="234"
-              stroke="rgba(124, 91, 245, 0.2)"
+              stroke={currentTheme.secondary}
               strokeWidth="0.8"
+              opacity="0.3"
             />
 
             {/* Cardinal Degree Indices (000, 090, 180, 270) */}
@@ -172,8 +220,9 @@ export default function HeroVisual() {
               cy="300"
               rx="230"
               ry="70"
-              stroke="rgba(124, 91, 245, 0.25)"
+              stroke={currentTheme.secondary}
               strokeWidth="1.2"
+              opacity="0.35"
               transform="rotate(-18 300 300)"
             />
 
@@ -184,8 +233,9 @@ export default function HeroVisual() {
               cy="300"
               rx="185"
               ry="50"
-              stroke="rgba(0, 212, 255, 0.2)"
+              stroke={currentTheme.primary}
               strokeWidth="1"
+              opacity="0.3"
               transform="rotate(32 300 300)"
             />
 
@@ -193,16 +243,17 @@ export default function HeroVisual() {
             <polygon
               id="hex-outer"
               points="300,140 435,218 435,382 300,460 165,382 165,218"
-              stroke="rgba(124, 91, 245, 0.3)"
+              stroke={currentTheme.secondary}
               strokeWidth="1.5"
+              opacity="0.4"
               fill="rgba(124, 91, 245, 0.02)"
             />
 
             {/* Corner Structural Brackets */}
-            <path d="M 165 235 L 165 218 L 182 218" stroke="#00d4ff" strokeWidth="1.5" fill="none" opacity="0.8" />
-            <path d="M 435 235 L 435 218 L 418 218" stroke="#00d4ff" strokeWidth="1.5" fill="none" opacity="0.8" />
-            <path d="M 165 365 L 165 382 L 182 382" stroke="#7c5bf5" strokeWidth="1.5" fill="none" opacity="0.8" />
-            <path d="M 435 365 L 435 382 L 418 382" stroke="#7c5bf5" strokeWidth="1.5" fill="none" opacity="0.8" />
+            <path d="M 165 235 L 165 218 L 182 218" stroke={currentTheme.primary} strokeWidth="1.5" fill="none" opacity="0.8" />
+            <path d="M 435 235 L 435 218 L 418 218" stroke={currentTheme.primary} strokeWidth="1.5" fill="none" opacity="0.8" />
+            <path d="M 165 365 L 165 382 L 182 382" stroke={currentTheme.secondary} strokeWidth="1.5" fill="none" opacity="0.8" />
+            <path d="M 435 365 L 435 382 L 418 382" stroke={currentTheme.secondary} strokeWidth="1.5" fill="none" opacity="0.8" />
           </g>
 
           {/* ============================================================
@@ -210,16 +261,16 @@ export default function HeroVisual() {
               ============================================================ */}
           <g id="layer-signal" className="transition-transform duration-75">
             {/* Axial Telemetry Guides */}
-            <line id="sig-1" x1="300" y1="110" x2="300" y2="185" stroke="rgba(0, 212, 255, 0.4)" strokeWidth="1" strokeDasharray="3 4" />
-            <line id="sig-2" x1="300" y1="415" x2="300" y2="490" stroke="rgba(0, 212, 255, 0.4)" strokeWidth="1" strokeDasharray="3 4" />
-            <line id="sig-3" x1="110" y1="300" x2="185" y2="300" stroke="rgba(124, 91, 245, 0.4)" strokeWidth="1" strokeDasharray="3 4" />
-            <line id="sig-4" x1="415" y1="300" x2="490" y2="300" stroke="rgba(124, 91, 245, 0.4)" strokeWidth="1" strokeDasharray="3 4" />
+            <line id="sig-1" x1="300" y1="110" x2="300" y2="185" stroke={currentTheme.primary} strokeWidth="1" strokeDasharray="3 4" opacity="0.5" />
+            <line id="sig-2" x1="300" y1="415" x2="300" y2="490" stroke={currentTheme.primary} strokeWidth="1" strokeDasharray="3 4" opacity="0.5" />
+            <line id="sig-3" x1="110" y1="300" x2="185" y2="300" stroke={currentTheme.secondary} strokeWidth="1" strokeDasharray="3 4" opacity="0.5" />
+            <line id="sig-4" x1="415" y1="300" x2="490" y2="300" stroke={currentTheme.secondary} strokeWidth="1" strokeDasharray="3 4" opacity="0.5" />
 
             {/* Glowing Sensor Nodes */}
-            <circle cx="300" cy="110" r="3" fill="#00d4ff" filter="url(#neon-glow)" />
-            <circle cx="300" cy="490" r="3" fill="#00d4ff" filter="url(#neon-glow)" />
-            <circle cx="110" cy="300" r="3" fill="#7c5bf5" filter="url(#neon-glow)" />
-            <circle cx="490" cy="300" r="3" fill="#7c5bf5" filter="url(#neon-glow)" />
+            <circle cx="300" cy="110" r="3.5" fill={currentTheme.primary} filter="url(#neon-glow)" />
+            <circle cx="300" cy="490" r="3.5" fill={currentTheme.primary} filter="url(#neon-glow)" />
+            <circle cx="110" cy="300" r="3.5" fill={currentTheme.secondary} filter="url(#neon-glow)" />
+            <circle cx="490" cy="300" r="3.5" fill={currentTheme.secondary} filter="url(#neon-glow)" />
 
             {/* Dynamic Telemetry Arc Rays */}
             <path
@@ -227,14 +278,14 @@ export default function HeroVisual() {
               stroke="url(#telemetry-arc)"
               strokeWidth="1.2"
               fill="none"
-              opacity="0.6"
+              opacity="0.65"
             />
             <path
               d="M 100 370 Q 300 520 500 370"
               stroke="url(#telemetry-arc)"
               strokeWidth="0.9"
               fill="none"
-              opacity="0.4"
+              opacity="0.45"
             />
           </g>
 
@@ -242,37 +293,33 @@ export default function HeroVisual() {
               LAYER: ENERGY (Floating Crystalline Shards & Glowing Fragments)
               ============================================================ */}
           <g id="layer-energy" className="transition-transform duration-75">
-            {/* Shard 1 — Top Right High-Energy Prism */}
             <polygon
               id="shard-1"
               points="410,150 445,185 420,210 385,175"
-              fill="url(#shard-cyan)"
+              fill="url(#shard-grad-1)"
               filter="url(#neon-glow)"
-              opacity="0.85"
+              opacity="0.9"
             />
-            {/* Shard 2 — Bottom Left Resonant Crystal */}
             <polygon
               id="shard-2"
               points="190,440 155,405 180,380 215,415"
-              fill="url(#shard-violet)"
+              fill="url(#shard-grad-2)"
               filter="url(#neon-glow)"
-              opacity="0.85"
+              opacity="0.9"
             />
-            {/* Shard 3 — Top Left Auxiliary Node */}
             <polygon
               id="shard-3"
               points="190,150 155,185 180,210 215,175"
-              fill="url(#shard-cyan)"
+              fill="url(#shard-grad-1)"
               filter="url(#neon-glow)"
-              opacity="0.75"
+              opacity="0.8"
             />
-            {/* Shard 4 — Bottom Right Horizon Shard */}
             <polygon
               id="shard-4"
               points="455,340 485,370 455,395 425,365"
-              fill="url(#shard-violet)"
+              fill="url(#shard-grad-2)"
               filter="url(#neon-glow)"
-              opacity="0.8"
+              opacity="0.85"
             />
           </g>
 
@@ -280,102 +327,80 @@ export default function HeroVisual() {
               LAYER: CORE (The Quantum Reactor, Pulsing Diamond Matrix)
               ============================================================ */}
           <g id="layer-core" className="transition-transform duration-75">
-            {/* Inner Precision Hexagonal Frame */}
             <polygon
               id="hex-inner"
               points="300,185 380,230 380,370 300,415 220,370 220,230"
-              stroke="rgba(0, 212, 255, 0.4)"
+              stroke={currentTheme.primary}
               strokeWidth="1.2"
+              opacity="0.5"
               fill="rgba(0, 212, 255, 0.03)"
             />
 
-            {/* Central Diamond Crystal Lattice */}
             <polygon
               id="diamond-frame"
               points="300,215 345,300 300,385 255,300"
-              stroke="rgba(255, 255, 255, 0.6)"
-              strokeWidth="1.4"
+              stroke="rgba(255, 255, 255, 0.7)"
+              strokeWidth="1.5"
               fill="rgba(124, 91, 245, 0.08)"
             />
 
-            {/* Outer Plasma Containment Halo */}
             <circle
               id="core-outer"
               cx="300"
               cy="300"
               r="58"
-              fill="rgba(124, 91, 245, 0.15)"
-              stroke="rgba(124, 91, 245, 0.4)"
+              fill={currentTheme.secondary}
+              opacity="0.2"
+              stroke={currentTheme.secondary}
               strokeWidth="1.5"
               filter="url(#neon-glow)"
             />
 
-            {/* Mid Resonant Chamber */}
             <circle
               id="core-mid"
               cx="300"
               cy="300"
               r="38"
-              fill="rgba(0, 212, 255, 0.25)"
-              stroke="rgba(255, 255, 255, 0.7)"
-              strokeWidth="1.4"
+              fill={currentTheme.primary}
+              opacity="0.35"
+              stroke="#ffffff"
+              strokeWidth="1.5"
             />
 
-            {/* Inner Quantum Reactor */}
             <circle
               id="core-inner"
               cx="300"
               cy="300"
-              r="20"
+              r="22"
               fill="url(#plasma-core)"
               filter="url(#hyper-glow)"
             />
 
-            {/* Center Specular Singularity Spark */}
             <circle
               id="core-bright"
               cx="300"
               cy="300"
-              r="7"
+              r="8"
               fill="#ffffff"
               filter="url(#neon-glow)"
             />
           </g>
 
           {/* Sub-Pixel Orbital Node Satellites */}
-          <circle id="orbit-node-1" cx="530" cy="300" r="3.5" fill="#00d4ff" filter="url(#neon-glow)" />
-          <circle id="orbit-node-2" cx="70" cy="300" r="3.5" fill="#7c5bf5" filter="url(#neon-glow)" />
-          <circle id="orbit-node-3" cx="300" cy="70" r="3.5" fill="#00d4ff" filter="url(#neon-glow)" />
-          <circle id="orbit-node-4" cx="300" cy="530" r="3.5" fill="#7c5bf5" filter="url(#neon-glow)" />
+          <circle id="orbit-node-1" cx="530" cy="300" r="3.5" fill={currentTheme.primary} filter="url(#neon-glow)" />
+          <circle id="orbit-node-2" cx="70" cy="300" r="3.5" fill={currentTheme.secondary} filter="url(#neon-glow)" />
+          <circle id="orbit-node-3" cx="300" cy="70" r="3.5" fill={currentTheme.primary} filter="url(#neon-glow)" />
+          <circle id="orbit-node-4" cx="300" cy="530" r="3.5" fill={currentTheme.secondary} filter="url(#neon-glow)" />
         </svg>
 
-        {/* Real-time Subsystem Vector Coordinate HUD Overlay */}
+        {/* HUD Interactive Callout Badge */}
         <div
-          className="absolute bottom-6 left-6 flex flex-col gap-1 pointer-events-none select-none"
+          className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md opacity-80 hover:opacity-100 transition-opacity"
           aria-hidden="true"
         >
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-mono-custom text-[9px] tracking-widest text-emerald-400 font-bold">
-              SYS-01 // STABLE
-            </span>
-          </div>
-          <span className="font-mono-custom text-[8px] tracking-widest text-white/40">
-            X 034.82 // Y 092.14 // Z 018.90
-          </span>
-          <span className="font-mono-custom text-[8px] tracking-widest text-white/30">
-            ROT: QUATERNION // FLUX: 1.4 GHz
-          </span>
-        </div>
-
-        {/* Top-Right Core Status Callout */}
-        <div
-          className="absolute top-6 right-6 flex items-center gap-2 px-2.5 py-1 rounded bg-black/40 border border-white/10 backdrop-blur-md pointer-events-none select-none"
-          aria-hidden="true"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00d4ff]" />
-          <span className="font-mono-custom text-[8px] tracking-[0.2em] text-cyan-300 font-semibold uppercase">
-            ENERGY HARMONIC 99.8%
+          <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ backgroundColor: currentTheme.primary }} />
+          <span className="font-mono-custom text-[8px] tracking-[0.2em] text-white/70 uppercase">
+            CLICK CORE TO DISCHARGE SHOCKWAVE
           </span>
         </div>
       </div>

@@ -7,10 +7,13 @@ import Hero from "@/components/Hero";
 import ScrollProgress from "@/components/ScrollProgress";
 import SectionTransition from "@/components/SectionTransition";
 import MagneticButton from "@/components/MagneticButton";
+import EnergyDock from "@/components/EnergyDock";
+import TelemetryHud from "@/components/TelemetryHud";
+import Shockwave from "@/components/Shockwave";
 import { useLenis } from "@/hooks/useLenis";
 import { soundEngine } from "@/utils/audio";
 
-// Client-only dynamic imports to prevent SSR mismatch
+// Client-only dynamic imports
 const CustomCursor = dynamic(() => import("@/components/CustomCursor"), {
   ssr: false,
 });
@@ -18,6 +21,8 @@ const CustomCursor = dynamic(() => import("@/components/CustomCursor"), {
 export default function AstraPage() {
   const [loaded, setLoaded] = useState(false);
   const [scrollData, setScrollData] = useState({ progress: 0, direction: 1, velocity: 0 });
+  const [energyMode, setEnergyMode] = useState("violet");
+  const [shockwaveId, setShockwaveId] = useState(0);
   const [terminalInput, setTerminalInput] = useState("");
   const [terminalOutput, setTerminalOutput] = useState([
     "ASTRA MOTION SYSTEM v2.4 ONLINE",
@@ -39,13 +44,48 @@ export default function AstraPage() {
     soundEngine.modulateVelocity(data.velocity);
   }, []);
 
+  const triggerShockwave = useCallback(() => {
+    soundEngine.playShockwave();
+    setShockwaveId((prev) => prev + 1);
+  }, []);
+
+  // Keyboard shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if user is typing in terminal input
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "1") {
+        setEnergyMode("violet");
+        soundEngine.playModeShift("violet");
+      } else if (e.key === "2") {
+        setEnergyMode("emerald");
+        soundEngine.playModeShift("emerald");
+      } else if (e.key === "3") {
+        setEnergyMode("solar");
+        soundEngine.playModeShift("solar");
+      } else if (e.key === "4") {
+        setEnergyMode("overdrive");
+        soundEngine.playModeShift("overdrive");
+      } else if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        triggerShockwave();
+      } else if (e.key.toLowerCase() === "m") {
+        soundEngine.toggle();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [triggerShockwave]);
+
   const runTerminalCommand = (cmd) => {
     soundEngine.playClick();
     const trimmed = cmd.trim().toLowerCase();
     let res = "";
     switch (trimmed) {
       case "help":
-        res = "Commands: 'specs', 'timeline', 'metrics', 'clear'";
+        res = "Commands: 'specs', 'timeline', 'metrics', 'mode <violet|emerald|solar|overdrive>', 'clear'";
         break;
       case "specs":
         res = "PIPELINE: GSAP 3.15 + Lenis // GPU: Transform3D // FPS TARGET: 120 // REFLOWS: 0";
@@ -55,6 +95,26 @@ export default function AstraPage() {
         break;
       case "metrics":
         res = "EFFICIENCY: 98.4% // MEMORY: <38MB // COMPOSITOR LAYERS: 6 // DOM PARTICLE COUNT: 0 (Canvas)";
+        break;
+      case "mode violet":
+        setEnergyMode("violet");
+        soundEngine.playModeShift("violet");
+        res = "ENERGY STATE SHIFTED TO: IONIC VIOLET";
+        break;
+      case "mode emerald":
+        setEnergyMode("emerald");
+        soundEngine.playModeShift("emerald");
+        res = "ENERGY STATE SHIFTED TO: CYBER EMERALD";
+        break;
+      case "mode solar":
+        setEnergyMode("solar");
+        soundEngine.playModeShift("solar");
+        res = "ENERGY STATE SHIFTED TO: SOLAR FLARE";
+        break;
+      case "mode overdrive":
+        setEnergyMode("overdrive");
+        soundEngine.playModeShift("overdrive");
+        res = "ENERGY STATE SHIFTED TO: HYPER OVERDRIVE";
         break;
       case "clear":
         setTerminalOutput(["ASTRA TERMINAL READY"]);
@@ -67,8 +127,25 @@ export default function AstraPage() {
     setTerminalInput("");
   };
 
+  const getShockwaveColor = () => {
+    switch (energyMode) {
+      case "emerald":
+        return "#10b981";
+      case "solar":
+        return "#f59e0b";
+      case "overdrive":
+        return "#f43f5e";
+      case "violet":
+      default:
+        return "#00d4ff";
+    }
+  };
+
   return (
-    <main id="astra-root" className="relative bg-[#030305] text-[#f0f0f8] overflow-x-hidden min-h-screen selection:bg-cyan-500/30 selection:text-white">
+    <main
+      id="astra-root"
+      className="relative bg-[#030305] text-[#f0f0f8] overflow-x-hidden min-h-screen selection:bg-cyan-500/30 selection:text-white"
+    >
       {/* Fallback for non-JS clients */}
       <noscript>
         <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-[#030305]">
@@ -83,11 +160,33 @@ export default function AstraPage() {
       {/* Cinematic Initial Loader */}
       <Loader onComplete={handleLoaderComplete} />
 
-      {/* Desktop Custom Cursor with Dynamic Context States */}
+      {/* Desktop Custom Cursor */}
       <CustomCursor />
 
-      {/* Futuristic Fixed Navigation */}
+      {/* Futuristic Fixed Navigation with Live Equalizer */}
       <Navbar />
+
+      {/* Real-time Telemetry HUD (FPS & Velocity Gauge) */}
+      {loaded && (
+        <TelemetryHud
+          velocity={scrollData.velocity}
+          progress={scrollData.progress}
+        />
+      )}
+
+      {/* Floating Cyberpunk Quantum Energy Dock */}
+      {loaded && (
+        <EnergyDock
+          activeMode={energyMode}
+          onModeChange={setEnergyMode}
+        />
+      )}
+
+      {/* Fullscreen Radial Energy Shockwave Discharge */}
+      <Shockwave
+        triggerId={shockwaveId}
+        color={getShockwaveColor()}
+      />
 
       {/* Scroll Intelligence Progress Bar */}
       {loaded && (
@@ -99,8 +198,21 @@ export default function AstraPage() {
 
       {/* Master Hero Experience with 7-Stage Timeline */}
       {loaded && (
-        <Hero onProgressChange={handleProgressChange} />
+        <Hero
+          onProgressChange={handleProgressChange}
+          energyMode={energyMode}
+          onCoreClick={triggerShockwave}
+        />
       )}
+
+      {/* Keyboard Shortcuts Hint HUD */}
+      <div
+        className="fixed bottom-6 left-6 z-30 hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#05050a]/60 border border-white/10 backdrop-blur-md pointer-events-none select-none text-[8px] font-mono-custom text-white/40"
+        aria-hidden="true"
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+        <span>HOTKEYS: [1-4] MODES // [SPACE] SHOCKWAVE // [M] AUDIO</span>
+      </div>
 
       {/* SECTION 1 TRANSITION */}
       <SectionTransition stageNumber="01" stageName="INTERACTION ARCHITECTURE" />
@@ -147,7 +259,7 @@ export default function AstraPage() {
             {
               id: "03",
               title: "Adaptive Particle Telemetry",
-              desc: "Canvas particle density throttles dynamically between desktop and mobile with high-DPI retina clamping and velocity streaking.",
+              desc: "Canvas particle density throttles dynamically between desktop and mobile with high-DPI retina clamping, velocity streaking, and mouse repulsion.",
               tag: "HTML5 Canvas API",
             },
           ].map((card) => (
@@ -217,8 +329,8 @@ export default function AstraPage() {
             </div>
 
             {/* Quick Command Buttons */}
-            <div className="flex gap-2">
-              {["specs", "timeline", "metrics", "clear"].map((cmd) => (
+            <div className="flex flex-wrap gap-2">
+              {["specs", "timeline", "metrics", "mode overdrive", "clear"].map((cmd) => (
                 <button
                   key={cmd}
                   onClick={() => runTerminalCommand(cmd)}
@@ -256,7 +368,7 @@ export default function AstraPage() {
               type="text"
               value={terminalInput}
               onChange={(e) => setTerminalInput(e.target.value)}
-              placeholder="Enter diagnostic command (e.g. specs, metrics, timeline)..."
+              placeholder="Enter diagnostic command (e.g. specs, metrics, timeline, mode solar)..."
               className="flex-1 bg-transparent border-none outline-none text-xs text-white placeholder-white/20 font-mono-custom"
               aria-label="Terminal command input"
             />
@@ -330,7 +442,7 @@ export default function AstraPage() {
                 ["SMOOTH SCROLL", "Lenis 120fps inertia engine + GSAP ticker sync"],
                 ["UI RUNTIME", "React 19 with useLayoutEffect Context Isolation"],
                 ["ANIMATION ENGINE", "GSAP 3.15 + ScrollTrigger Master Scrubbing"],
-                ["AUDIO SYSTEM", "Procedural Web Audio API (Zero external media files)"],
+                ["AUDIO SYSTEM", "Procedural Web Audio API with real-time spectrum analysis"],
                 ["STYLE ARCHITECTURE", "Tailwind CSS v4 + Hardware Accelerated CSS Custom Properties"],
                 ["ACCESSIBILITY", "WCAG AA Standard + prefers-reduced-motion safe paths"],
                 ["ASSET ORIGIN", "100% Procedural SVG & Canvas (Zero external image dependencies)"],
