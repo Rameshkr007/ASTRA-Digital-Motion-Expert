@@ -7,8 +7,10 @@ import Hero from "@/components/Hero";
 import ScrollProgress from "@/components/ScrollProgress";
 import SectionTransition from "@/components/SectionTransition";
 import MagneticButton from "@/components/MagneticButton";
+import { useLenis } from "@/hooks/useLenis";
+import { soundEngine } from "@/utils/audio";
 
-// Client-only dynamic imports
+// Client-only dynamic imports to prevent SSR mismatch
 const CustomCursor = dynamic(() => import("@/components/CustomCursor"), {
   ssr: false,
 });
@@ -21,7 +23,9 @@ export default function AstraPage() {
     "ASTRA MOTION SYSTEM v2.4 ONLINE",
     "Type 'help' or click presets for telemetry diagnostics.",
   ]);
-  const [activeTab, setActiveTab] = useState("specs");
+
+  // Activate Lenis 120fps smooth scrolling
+  useLenis();
 
   const handleLoaderComplete = useCallback(() => {
     setLoaded(true);
@@ -32,9 +36,11 @@ export default function AstraPage() {
 
   const handleProgressChange = useCallback((data) => {
     setScrollData(data);
+    soundEngine.modulateVelocity(data.velocity);
   }, []);
 
   const runTerminalCommand = (cmd) => {
+    soundEngine.playClick();
     const trimmed = cmd.trim().toLowerCase();
     let res = "";
     switch (trimmed) {
@@ -42,13 +48,13 @@ export default function AstraPage() {
         res = "Commands: 'specs', 'timeline', 'metrics', 'clear'";
         break;
       case "specs":
-        res = "PIPELINE: GSAP 3.15 // GPU: Transform3D // FPS TARGET: 60-120 // REFLOWS: 0";
+        res = "PIPELINE: GSAP 3.15 + Lenis // GPU: Transform3D // FPS TARGET: 120 // REFLOWS: 0";
         break;
       case "timeline":
         res = "STAGES: [01:INTRO] -> [02:DEPTH] -> [03:ORBIT] -> [04:BREAK] -> [05:DATA] -> [06:REASSEMBLE] -> [07:FINAL]";
         break;
       case "metrics":
-        res = "EFFICIENCY: 98.4% // MEMORY: <42MB // COMPOSITOR LAYERS: 6 // DOM PARTICLE COUNT: 0 (Canvas)";
+        res = "EFFICIENCY: 98.4% // MEMORY: <38MB // COMPOSITOR LAYERS: 6 // DOM PARTICLE COUNT: 0 (Canvas)";
         break;
       case "clear":
         setTerminalOutput(["ASTRA TERMINAL READY"]);
@@ -62,10 +68,10 @@ export default function AstraPage() {
   };
 
   return (
-    <main id="astra-root" className="relative bg-[#050508] text-[#f0f0f8] overflow-x-hidden min-h-screen">
+    <main id="astra-root" className="relative bg-[#030305] text-[#f0f0f8] overflow-x-hidden min-h-screen selection:bg-cyan-500/30 selection:text-white">
       {/* Fallback for non-JS clients */}
       <noscript>
-        <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-[#050508]">
+        <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-[#030305]">
           <h1 className="text-5xl font-extrabold tracking-widest text-white mb-4">ASTRA</h1>
           <p className="text-sm font-mono text-white/60 mb-6">A DIGITAL MOTION EXPERIENCE</p>
           <p className="max-w-md text-xs font-mono text-white/40 leading-relaxed">
@@ -128,7 +134,7 @@ export default function AstraPage() {
           {[
             {
               id: "01",
-              title: "Normalized Scroll scrubbing",
+              title: "Normalized Scroll Scrubbing",
               desc: "A single master ScrollTrigger scrubs across 320vh of pinned viewport. Reversible at every sub-millisecond scroll increment.",
               tag: "GSAP Scrub: 1.4",
             },
@@ -147,8 +153,9 @@ export default function AstraPage() {
           ].map((card) => (
             <div
               key={card.id}
-              className="relative p-8 rounded-lg border border-white/10 bg-[#0d0d18]/60 backdrop-blur-md hover:border-violet-500/40 transition-all duration-300 group"
+              className="relative p-8 rounded-lg border border-white/10 bg-[#0a0a12]/70 backdrop-blur-md hover:border-violet-500/40 hover:bg-[#0f0f1c]/80 transition-all duration-300 group"
               data-cursor="explore"
+              onMouseEnter={() => soundEngine.playHover()}
             >
               <div className="flex justify-between items-start mb-6">
                 <span className="font-mono-custom text-xs text-violet-400 font-bold tracking-widest">
@@ -197,13 +204,13 @@ export default function AstraPage() {
         </div>
 
         {/* Live Interactive Telemetry Console */}
-        <div className="border border-white/10 rounded-lg bg-[#0a0a12] p-6 md:p-8 font-mono-custom">
+        <div className="border border-white/10 rounded-lg bg-[#08080e] p-6 md:p-8 font-mono-custom shadow-2xl">
           {/* Console Header */}
           <div className="flex flex-wrap items-center justify-between border-b border-white/10 pb-4 mb-6 gap-4">
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block" />
-              <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block" />
-              <span className="w-3 h-3 rounded-full bg-green-500/80 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500/80 inline-block" />
               <span className="text-xs text-white/50 ml-3 tracking-widest">
                 ASTRA-DIAGNOSTIC-SHELL // PORT: 3000
               </span>
@@ -216,7 +223,7 @@ export default function AstraPage() {
                   key={cmd}
                   onClick={() => runTerminalCommand(cmd)}
                   data-cursor="open"
-                  className="text-[10px] uppercase px-2.5 py-1 rounded bg-white/5 hover:bg-violet-600/30 text-white/70 hover:text-white border border-white/10 transition-colors"
+                  className="text-[10px] uppercase px-3 py-1 rounded bg-white/5 hover:bg-violet-600/30 text-white/70 hover:text-white border border-white/10 transition-colors"
                 >
                   {cmd}
                 </button>
@@ -244,18 +251,18 @@ export default function AstraPage() {
             }}
             className="flex items-center gap-3 pt-4 border-t border-white/10"
           >
-            <span className="text-violet-400 text-sm">{">"}</span>
+            <span className="text-violet-400 text-sm font-bold">{">"}</span>
             <input
               type="text"
               value={terminalInput}
               onChange={(e) => setTerminalInput(e.target.value)}
-              placeholder="Enter command (e.g. specs, metrics, timeline)..."
+              placeholder="Enter diagnostic command (e.g. specs, metrics, timeline)..."
               className="flex-1 bg-transparent border-none outline-none text-xs text-white placeholder-white/20 font-mono-custom"
               aria-label="Terminal command input"
             />
             <button
               type="submit"
-              className="text-[10px] tracking-widest uppercase px-3 py-1.5 rounded bg-violet-600/40 text-violet-200 hover:bg-violet-600 hover:text-white transition-colors"
+              className="text-[10px] tracking-widest uppercase px-4 py-1.5 rounded bg-violet-600/40 text-violet-200 hover:bg-violet-600 hover:text-white transition-colors"
             >
               EXECUTE
             </button>
@@ -292,9 +299,10 @@ export default function AstraPage() {
               precision SVG geometry, ASTRA pushes the boundaries of modern frontend craftsmanship.
             </p>
 
-            <div className="pt-4">
+            <div className="pt-4 flex gap-4">
               <MagneticButton
                 onClick={() => {
+                  soundEngine.playClick();
                   if (typeof window !== "undefined") {
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }
@@ -308,7 +316,7 @@ export default function AstraPage() {
           </div>
 
           {/* Technical Specifications Accordion / Panel */}
-          <div className="border border-white/10 rounded-lg p-8 bg-[#0d0d18]/50 flex flex-col gap-6 font-mono-custom">
+          <div className="border border-white/10 rounded-lg p-8 bg-[#0a0a12]/70 backdrop-blur-md flex flex-col gap-6 font-mono-custom">
             <div className="flex justify-between items-center border-b border-white/10 pb-4">
               <span className="text-xs text-white/40 uppercase tracking-widest">
                 CORE TECHNICAL SPECIFICATIONS
@@ -319,8 +327,10 @@ export default function AstraPage() {
             <div className="flex flex-col gap-4 text-xs">
               {[
                 ["FRAMEWORK", "Next.js 15 (App Router, Server Components)"],
+                ["SMOOTH SCROLL", "Lenis 120fps inertia engine + GSAP ticker sync"],
                 ["UI RUNTIME", "React 19 with useLayoutEffect Context Isolation"],
                 ["ANIMATION ENGINE", "GSAP 3.15 + ScrollTrigger Master Scrubbing"],
+                ["AUDIO SYSTEM", "Procedural Web Audio API (Zero external media files)"],
                 ["STYLE ARCHITECTURE", "Tailwind CSS v4 + Hardware Accelerated CSS Custom Properties"],
                 ["ACCESSIBILITY", "WCAG AA Standard + prefers-reduced-motion safe paths"],
                 ["ASSET ORIGIN", "100% Procedural SVG & Canvas (Zero external image dependencies)"],
@@ -339,7 +349,7 @@ export default function AstraPage() {
           FOOTER
           ============================================================ */}
       <footer
-        className="relative border-t border-white/10 py-10 px-6 md:px-16 bg-[#040406] flex flex-col sm:flex-row items-center justify-between gap-4 font-mono-custom text-[11px] text-white/40 z-20"
+        className="relative border-t border-white/10 py-10 px-6 md:px-16 bg-[#020204] flex flex-col sm:flex-row items-center justify-between gap-4 font-mono-custom text-[11px] text-white/40 z-20"
         role="contentinfo"
       >
         <div className="flex items-center gap-2">
