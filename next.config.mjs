@@ -1,17 +1,18 @@
 /** @type {import('next').NextConfig} */
+const isGithubActions = process.env.GITHUB_ACTIONS === "true";
+const repoName = "ASTRA-Digital-Motion-Expert";
+
 const nextConfig = {
-  // Strict mode helps catch hydration issues early
-  reactStrictMode: true,
+  // Static export when running in GitHub Actions for GitHub Pages
+  output: isGithubActions ? "export" : undefined,
+  basePath: isGithubActions ? `/${repoName}` : undefined,
+  assetPrefix: isGithubActions ? `/${repoName}/` : undefined,
 
-  // Image optimization — no external images used in this project
   images: {
-    remotePatterns: [],
+    unoptimized: true,
   },
 
-  // Compiler options for better tree-shaking in production
-  compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
-  },
+  reactStrictMode: true,
 };
 
 export default nextConfig;
